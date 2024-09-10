@@ -67,10 +67,15 @@ export function start3d(svgs) {
 
     function getEventPosition(e) {
         const rect = canvas.getBoundingClientRect();
-        if (e.touches) {
+        if (e.touches && e.touches.length > 0) {
             return {
                 x: e.touches[0].clientX - rect.left,
                 y: e.touches[0].clientY - rect.top
+            };
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            return {
+                x: e.changedTouches[0].clientX - rect.left,
+                y: e.changedTouches[0].clientY - rect.top
             };
         }
         return {
@@ -91,6 +96,9 @@ export function start3d(svgs) {
           faceState[index] = (faceState[index] + 1) % MAX;
         });
       };
+
+      // This gets the latest mouse/touch positions
+      // drawScene(); // Actually this happens on touchstart
 
       switch (colorAtMouse) {
         case 1:
@@ -161,6 +169,9 @@ export function start3d(svgs) {
         cumulativeMovement = 0;
     
         const { x, y } = getEventPosition(e);
+        mouseX = x;
+        mouseY = y;
+
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
     });
@@ -253,6 +264,7 @@ export function start3d(svgs) {
         console.log("Texture changed successfully!");
       } catch (error) {
         console.error("Error updating texture:", error);
+        alert("Error updating texture:" + error);
       }
     }
 
@@ -266,6 +278,7 @@ export function start3d(svgs) {
         console.log("All SVGs drawn to canvas successfully!");
       } catch (error) {
         console.error("Error drawing SVGs to canvas:", error);
+        alert("Error drawing SVGs to canvas:" + error);
       }
 
       const image = await convertCanvasToImage();
@@ -353,7 +366,6 @@ export function start3d(svgs) {
       if (dance) {
         const fovAdjustment = degToRad(1);       
         fieldOfViewRadians = Math.min(Math.PI, fieldOfViewRadians + fovAdjustment);
-        console.log(fieldOfViewRadians);
       
         const randomXRotation = degToRad(10);
         const randomYRotation = degToRad(10);
@@ -510,6 +522,7 @@ export function start3d(svgs) {
       return invert ? TEX_STAR_I : TEX_STAR;
     } else {
       console.warn("Invalid texture index:", index);
+      alert("Invalid texture index:" + index);
       return null;
     }
   }

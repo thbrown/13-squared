@@ -11,8 +11,12 @@ import {
     isGameWinnable
 } from './2d-utils';
 
+const MARGIN = 50;
+
 export function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
     const gameContainer = document.getElementById('game-container-2d');
+    const gameContainerWrapper = document.getElementById('game-container-wrapper-2d');
+    //gameContainerWrapper.style.margin = `${MARGIN}px`;
 
     // TODO: clean up old levels?
 
@@ -30,7 +34,6 @@ export function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
     let squaresPerColumn = levelInfo.height;
     let squareSize = getSquareSize(squaresPerRow, squaresPerColumn);
     let decodedColors = decodeWithErrorChecks(levelInfo.colors, squaresPerColumn, squaresPerRow);
-    let totalSquares = squaresPerRow * squaresPerColumn;
     console.log("Init 2d level", squaresPerRow, squaresPerColumn, decodedColors);
 
     // Function to change color of a square

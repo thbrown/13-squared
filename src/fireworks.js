@@ -82,7 +82,7 @@ export class FireworkEffect {
 
     createPoissonFirework() {
         if (!this.isRunning) return;
-        this.createFirework(window.screen.width * Math.random(), window.screen.height * Math.random());
+        this.createFirework(window.innerWidth * Math.random(), window.innerHeight * Math.random());
         const interval = this.sample_poisson(10);
         this.fireworksTimeout = setTimeout(this.createPoissonFirework.bind(this), interval * 1000);
     }

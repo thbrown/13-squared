@@ -10,6 +10,8 @@ const reverseColorMap = {
     2: 'green'
 };
 
+const MAX_SQUARE_SIZE = 300;
+
 // Function to encode the grid state to a binary string
 export const encodeToBinary = (gridState) => {
     let binaryString = '';
@@ -151,17 +153,13 @@ export const getAdjacentIndices = (index) => {
     return adjInd;
 };
 
-/*
-export const getSquareSize = (rows, cols) => {
-    return Math.min(Math.floor(window.innerWidth / rows), Math.floor(window.innerHeight / cols));
-}*/
-
 export const getSquareSize = (rows, cols) => {
     const parentElement = document.getElementById('game-container-wrapper-2d');
     const parentWidth = parentElement.offsetWidth;
     const parentHeight = parentElement.offsetHeight;
 
-    return Math.min(Math.floor(parentWidth / rows), Math.floor(parentHeight / cols));
+    const value = Math.min(Math.floor(parentWidth / rows), Math.floor(parentHeight / cols));
+    return Math.min(value, MAX_SQUARE_SIZE);
 };
 
 export const decodeWithErrorChecks = (colorString, rows, cols) => {

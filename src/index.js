@@ -113,6 +113,7 @@ document.getElementById('next-level').addEventListener('click', nextLevel);
 
 // Init Controls
 const hintButton = document.getElementById('hint');
+const skipButton = document.getElementById('skip');
 
 hintButton.addEventListener('click', function() {
     disperseSquares();
@@ -126,6 +127,10 @@ hintButton.addEventListener('click', function() {
     titleElement.textContent = `You win!`;
     titleElement.style.color = 'white';
     document.getElementById('controls').style.visibility = 'hidden';
+});
+
+skipButton.addEventListener('click', function() {
+    nextLevel();
 });
 
 // Init main game function
@@ -145,12 +150,12 @@ const initGame = (index) => {
     const currentLevel = levels[index];
     console.log("Init level", index, currentLevel);
     if(index === 0) {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it 13!`;
+        document.getElementById('title').textContent = `Level ${index+1} - Make it 13`;
     } else {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13!`;
+        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13`;
     }
     if(currentLevel.mode === "2d") {
-        document.getElementById('game-container-wrapper-2d').style.visibility = '';
+        document.getElementById('game-container-wrapper-2d').style.visibility = 'unset';
         document.getElementById('game-canvas-3d').style.visibility = 'hidden';
         start2d(svgStrings[2], svgStrings[0], svgStrings[1], currentLevel, () => {
             fireworkEffect.startFireworks();
@@ -158,15 +163,17 @@ const initGame = (index) => {
             showWinModal(false, levelIndex);
         })
     } else {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13! Try dragging`;
+        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
-        document.getElementById('game-canvas-3d').style.visibility = '';
+        document.getElementById('game-canvas-3d').style.visibility = 'unset';
         start3d(svgElements);
     }
 }
 
 document.getElementById('close-intro').addEventListener('click', function() {
+    document.getElementById('game-container').style.visibility = 'unset';
     document.getElementById('intro-modal').style.display = 'none';
+    console.log("Starting game");
 });
 
 document.getElementById('curmudgeon').addEventListener('click', function() {
