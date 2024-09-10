@@ -22,9 +22,9 @@ const fireworkEffect = new FireworkEffect(10, canvas);
 // Init levels
 const levels = [
     {mode:"2d", colors:"QA", width:1, height:1},
-    //{mode:"2d", colors:"kA", width:1, height:3},
-    //{mode:"2d", colors:"GQ", width:1, height:4},
-    //{mode:"2d", colors:"SSFA", width:3, height:3},
+    {mode:"2d", colors:"kA", width:1, height:3},
+    {mode:"2d", colors:"GQ", width:1, height:4},
+    {mode:"2d", colors:"SSFA", width:3, height:3},
     //{mode:"2d", colors:"SSFA", width:3, height:4},
     //{mode:"2d", width:3, height:4},
     //{mode:"2d", colors:"SCpGRQ", width:4, height:4},
