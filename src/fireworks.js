@@ -1,17 +1,17 @@
 
 // Firework particle properties
 class FireworkParticle {
-    constructor(x, y, color) {
+    constructor(x, y, color, longLasting) {
         this.x = x;
         this.y = y;
         this.color = color;
         this.radius = Math.random() * 2 + 1;
         this.angle = Math.random() * 2 * Math.PI;
-        this.speed = Math.random() * 5 + 1;
-        this.friction = 0.98;
+        this.speed = Math.random() * 5 + .01;
+        this.friction = longLasting ? .999 : 0.98;
         this.gravity = 0.05;
         this.opacity = 1;
-        this.decay = Math.random() * 0.01 + 0.005;
+        this.decay = longLasting ? .004 : .01 ;//Math.random() * 0.01 + 0.005; // Flicker isn't as good I don't think
     }
 
     update() {
@@ -19,15 +19,24 @@ class FireworkParticle {
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed + this.gravity;
         this.opacity -= this.decay;
+        this.opacity = Math.max(0, this.opacity);
     }
+    
 
     draw(ctx) {
         ctx.save();
         ctx.globalAlpha = this.opacity;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
-        ctx.fill();
+
+
+        if(Math.random() > 1) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.font = `${this.size}px Arial`; // Set font size and type
+            ctx.fillText("13", this.x, this.y); // Draw "13" instead of a circle
+        }
         ctx.restore();
     }
 }
@@ -52,12 +61,12 @@ export class FireworkEffect {
         if(big) {
             for(let selectColor of colors) {
                 for (let i = 0; i < 500; i++) {
-                    this.fireworks.push(new FireworkParticle(x, y, selectColor));
+                    this.fireworks.push(new FireworkParticle(x, y, selectColor, true));
                 }
             }
         } else {
             for (let i = 0; i < 100; i++) {
-                this.fireworks.push(new FireworkParticle(x, y, color));
+                this.fireworks.push(new FireworkParticle(x, y, color, false));
             }
         }
 
