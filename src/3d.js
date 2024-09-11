@@ -21,7 +21,7 @@ export function danceCube() {
   dance = true;
 }
 
-export function start3d(svgs, onWin) {
+export function start3d(onWin) {
   const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
   drawImageTiles(tileDetails, true);
 
@@ -101,9 +101,6 @@ export function start3d(svgs, onWin) {
           faceState[index] = (faceState[index] + 1) % MAX;
         });
       };
-
-      // This gets the latest mouse/touch positions
-      // drawScene(); // Actually this happens on touchstart
 
       switch (colorAtMouse) {
         case 1:
@@ -195,42 +192,6 @@ export function start3d(svgs, onWin) {
         e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
 
-    // Async function to draw an SVG to canvas
-    /*
-    async function drawSVGToCanvas(svg, x, y) {
-      return new Promise((resolve, reject) => {
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const img = new Image();
-        img.onload = function () {
-          try {
-            const scaledWidth = (squareDim / 48) * 16;
-            const scaledHeight = (squareDim / 48) * 20;
-            const offsetX = Math.round(x + squareDim / 2 - scaledWidth / 2);
-            const offsetY = Math.round(y + squareDim / 2 - scaledHeight / 2);
-            context.drawImage(
-              img,
-              offsetX,
-              offsetY,
-              scaledWidth,
-              scaledHeight
-            );
-
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        };
-        img.onerror = function (error) {
-          reject(error);
-        };
-        const svgBlob = new Blob([svgData], {
-          type: "image/svg+xml;charset=utf-8",
-        });
-        const url = URL.createObjectURL(svgBlob);
-        img.src = url;
-      });
-    }*/
-
     const WIN_VALUE = 2;
     function checkWin() {
       let win = true;
@@ -242,7 +203,6 @@ export function start3d(svgs, onWin) {
       }
       if (win) {
         onWin();
-        //alert("you win!");
       }
     }
 
@@ -258,20 +218,6 @@ export function start3d(svgs, onWin) {
     }
 
     async function loadImages() {
-      /*
-      const promises = Array.from(svgs).map((svg, index) =>
-        drawSVGToCanvas(svg, index * squareDim, 0)
-      );
-
-      try {
-        await Promise.all(promises);
-        console.log("All SVGs drawn to canvas successfully!");
-      } catch (error) {
-        console.error("Error drawing SVGs to canvas:", error);
-        alert("Error drawing SVGs to canvas:" + error);
-      }
-      */
-
       const image = await convertCanvasToImage(document.getElementById("canvas-img"));
 
       gl.bindTexture(gl.TEXTURE_2D, texture);

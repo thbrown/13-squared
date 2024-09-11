@@ -1,13 +1,12 @@
 import { start3d, danceCube } from './3d.js';
 import { start2d } from './2d.js';
 import { FireworkEffect } from './fireworks.js';
+import { isGameWinnable, encodeGridStateToBase64, runBFSInWorker, decodeBase64GridState } from './2d-utils';
 
 // Init start screen
 // TODO: select level
 
-// Init images
-let svgElements = document.querySelectorAll('svg');
-let svgStrings = Array.from(svgElements).map(svg => svg.outerHTML);
+const LS_NAMESPACE = "yams-2024-";
 
 // Init background canvas
 const canvas = document.getElementById('background-canvas');
@@ -24,12 +23,13 @@ const levels = [
     {mode:"2d", colors:"QA", width:1, height:1},
     {mode:"2d", colors:"kA", width:1, height:3},
     {mode:"2d", colors:"GQ", width:1, height:4},
-    //{mode:"2d", colors:"SSFA", width:3, height:3},
-    //{mode:"2d", colors:"SSFA", width:3, height:4},
-    //{mode:"2d", width:3, height:4},
-    //{mode:"2d", colors:"SCpGRQ", width:4, height:4},
+    {mode:"2d", colors:"SSFA", width:3, height:3},
+    {mode:"2d", colors:"SSFA", width:3, height:4},
+    {mode:"2d", colors:"SCpGRQ", width:3, height:4},
     {mode:"3d"}];
 let levelIndex = 0;
+let currentLevel = levels[levelIndex];
+let unbind2dClickHandler = undefined;
 
 //=======================================================
 // Function to get a random value between min and max
@@ -73,8 +73,6 @@ function explodeSquares() {
     console.log("Explode squares");
 }
 
-
-//13squared
 //=======================================================
 
 // Init win dialog
@@ -102,21 +100,52 @@ const replay = () => {
     closeModal();
     // TODO: clear 3d state as well?
     initGame(levelIndex);
+    if(unbind2dClickHandler != null) {
+        unbind2dClickHandler();
+    }
 };
 const nextLevel = () => {
     closeModal();
     levelIndex++;
     initGame(levelIndex);
+    if(unbind2dClickHandler != null) {
+        unbind2dClickHandler();
+    }
 }
 document.getElementById('replay').addEventListener('click', replay);
 document.getElementById('next-level').addEventListener('click', nextLevel);
 
 // Init Controls
-const hintButton = document.getElementById('hint');
-const skipButton = document.getElementById('skip');
 
-hintButton.addEventListener('click', function() {
-    disperseSquares();
+document.getElementById('hint').addEventListener('click', async function() {
+    if(currentLevel.mode === "2d") {
+        const colorState = encodeGridStateToBase64();
+
+        // Not worker
+        const solution = isGameWinnable(colorState, currentLevel.height, currentLevel.width);
+        console.log("Solution:" , solution);
+        
+        // Worker
+        /*
+        const val = await runBFSInWorker(colorState, currentLevel.height, currentLevel.width);
+        console.log("Worker:", val);
+        */
+    } else {
+        console.log("No hint for 3d");
+    }
+});
+
+document.getElementById('skip').addEventListener('click', function() {
+    if(levelIndex === levels.length - 1) {
+        // For the last level we'll just show the win animation
+        win3d();
+    } else {
+        nextLevel();
+    }
+});
+
+const win3d = () => {
+    // onWin function
     fireworkEffect.startFireworks();
     const rect = document.getElementById("game-canvas-3d").getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -127,14 +156,10 @@ hintButton.addEventListener('click', function() {
     titleElement.textContent = `You win!`;
     titleElement.style.color = 'white';
     document.getElementById('controls').style.visibility = 'hidden';
-});
-
-skipButton.addEventListener('click', function() {
-    nextLevel();
-});
+};
 
 // Init main game function
-const initGame = (index) => {
+const initGame = async (index) => {
     // Reset all the UI stuff
     const gameContainer = document.getElementById('game-container-2d');
     gameContainer.innerHTML = '';
@@ -146,8 +171,18 @@ const initGame = (index) => {
     const controls = document.getElementById('controls');
     controls.style.visibility = '';
 
+    // Check if this level has been beaten before
+    var beaten = localStorage.getItem(LS_NAMESPACE + index);
+    if(beaten === "true") {
+        console.log("Level already beaten", index, beaten);
+        document.getElementById('skip').style.display = 'block';
+    } else {
+        console.log("Level not beaten", index, beaten);
+        document.getElementById('skip').style.display = 'none';
+    }
+
     // Init the game
-    const currentLevel = levels[index];
+    currentLevel = levels[index];
     console.log("Init level", index, currentLevel);
     if(index === 0) {
         document.getElementById('title').textContent = `Level ${index+1} - Make it 13`;
@@ -157,26 +192,22 @@ const initGame = (index) => {
     if(currentLevel.mode === "2d") {
         document.getElementById('game-container-wrapper-2d').style.visibility = 'unset';
         document.getElementById('game-canvas-3d').style.visibility = 'hidden';
-        start2d(svgStrings[2], svgStrings[0], svgStrings[1], currentLevel, () => {
+        unbind2dClickHandler = await start2d(currentLevel, () => {
+            // onWin function
+            localStorage.setItem(LS_NAMESPACE + index, "true");
             fireworkEffect.startFireworks();
             disperseSquares();
             showWinModal(false, levelIndex);
         })
+        console.log("Click unbond", unbind2dClickHandler);
     } else {
         document.getElementById('title').textContent = `Level ${index+1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
-        start3d(svgElements, ()=> {
-            fireworkEffect.startFireworks();
-            const rect = document.getElementById("game-canvas-3d").getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 2000);
-            danceCube();
-            const titleElement = document.getElementById('title');
-            titleElement.textContent = `You win!`;
-            titleElement.style.color = 'white';
-            document.getElementById('controls').style.visibility = 'hidden';
+        start3d(()=> {
+            // onWin function
+            localStorage.setItem(LS_NAMESPACE + index, "true");
+            win3d();
         });
     }
 }
