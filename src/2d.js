@@ -25,9 +25,7 @@ export async function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
     const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
     drawImageTiles(tileDetails, false);
     const imageTags = await convertCanvasToImgTags(document.getElementById("canvas-img"));
-    console.log("IMAGE TAGS", imageTags);
 
-    // Wrap svgs so we can apply css zoom
     RED_SVG = imageTags[1];
     BLUE_SVG = imageTags[0];
     GREEN_SVG = imageTags[2];
@@ -72,23 +70,6 @@ export async function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
         return Array.from(allSquares).every(square => square.style.backgroundColor === 'red');
     };
 
-    /*
-    window.addEventListener("popstate", (e) => {
-        let prevState = null;
-        try {
-            prevState = JSON.parse(e.state);
-        } catch (e) {
-            prevState = {};
-        }
-        squaresPerRow = prevState.width ?? Math.floor(window.innerWidth / squareSize);
-        squaresPerColumn = prevState.height ?? Math.floor(window.innerHeight / squareSize);
-        decodedColors = prevState.colors ? decodeBase64GridState(prevState.colors, squaresPerColumn, squaresPerRow) : null;
-        totalSquares = squaresPerRow * squaresPerColumn;
-        gameContainer.innerHTML = '';
-        initGameGrid(gameContainer, decodedColors, squaresPerRow, squaresPerColumn, squareSize, colors, RED_SVG, BLUE_SVG, GREEN_SVG);
-    });
-    */
-
     gameContainer.style.width = `${squaresPerRow * squareSize}px`;
 
     // Set up click event for each square
@@ -131,5 +112,4 @@ export async function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
 
     // Initialize the game grid
     initGameGrid(gameContainer, decodedColors, squaresPerRow, squaresPerColumn, squareSize, colors, RED_SVG, BLUE_SVG, GREEN_SVG);
-    //});
 }

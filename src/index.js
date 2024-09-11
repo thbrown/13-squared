@@ -166,7 +166,18 @@ const initGame = (index) => {
         document.getElementById('title').textContent = `Level ${index+1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
-        start3d(svgElements);
+        start3d(svgElements, ()=> {
+            fireworkEffect.startFireworks();
+            const rect = document.getElementById("game-canvas-3d").getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 2000);
+            danceCube();
+            const titleElement = document.getElementById('title');
+            titleElement.textContent = `You win!`;
+            titleElement.style.color = 'white';
+            document.getElementById('controls').style.visibility = 'hidden';
+        });
     }
 }
 

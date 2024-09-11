@@ -21,7 +21,7 @@ export function danceCube() {
   dance = true;
 }
 
-export function start3d(svgs) {
+export function start3d(svgs, onWin) {
   const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
   drawImageTiles(tileDetails, true);
 
@@ -241,7 +241,8 @@ export function start3d(svgs) {
         }
       }
       if (win) {
-        alert("you win!");
+        onWin();
+        //alert("you win!");
       }
     }
 
