@@ -173,64 +173,174 @@ export const decodeWithErrorChecks = (colorString, rows, cols) => {
     }
 }
 
-export const isGameWinnable = (base64State, rows, cols) => {
+export const isGameWinnable = (base64State, rows, cols, maxMoves) => {
+    const timeStart = performance.now();
     const gridState = decodeBase64GridState(base64State, rows, cols);
     console.log("Checking game", gridState, rows, cols);
 
     // Use Bloom filter for visited states
-    var visitedStates = new BloomFilter(
-        32 * 99999999, // number of bits to allocate.
-        16        // number of hash functions.
+    const visitedStates = new BloomFilter(
+        32 * 90000000, // Fine-tune the bit size
+        12             // Fine-tune number of hash functions
     );
 
-    const stack = []; // Stack for iterative exploration
+    const queue = []; // BFS queue
+    const pendingQueue = []; // Will be added to the queue when queue is empty
+    const adjacentIndicesMap = {}; // Precompute adjacent indices (so we can evaluate shorter moves first)
 
-    // Start with the initial state, index 0, and an empty move list
-    stack.push({ currentState: gridState.map(color => colorMap[color]), index: 0, moves: [] });
-
-    // Iterative exploration using a stack
-    while (stack.length > 0) {
-        const { currentState, index, moves } = stack.shift();
-
-        if (index >= currentState.length) {
-            continue; // Exhausted indexes, skip to next state
-        }
-
-        // Base case: check if all squares are red
-        const isWinning = currentState.every(color => color === colorMap['red']);
-        if (isWinning) {
-            return moves; // Winning state found, return the moves
-        }
-
-        if(moves.length > 10) {
-            return null; // No winning state within 10 moves
-        }
-
-        // Convert the current state to a string to check if it's been visited
-        const stateString = currentState.join('') + "-" + index;
-        if (visitedStates.test(stateString)) {
-            continue; // This state has already been visited
-        }
-        visitedStates.add(stateString); // Mark this state as visited
-
-        // Try changing the color of the current square and adjacent squares
-        const adjacentIndices = getAdjacentIndices(index, cols, rows);
-        const nextState = [...currentState]; // Clone the current state
-        nextState[index] = (nextState[index] + 1) % 3; // Change current square
-
-        adjacentIndices.forEach(adjIndex => {
-            nextState[adjIndex] = (nextState[adjIndex] + 1) % 3; // Change adjacent squares
-        });
-
-        // Push next state to the stack with the updated move
-        stack.push({ currentState: nextState, index: 0, moves: [...moves, index] });
-
-        // Push current state with incremented index to explore other possibilities
-        stack.push({ currentState: currentState, index: index + 1, moves });
+    // Precompute adjacent indices for each index
+    for (let i = 0; i < rows * cols; i++) {
+        adjacentIndicesMap[i] = getAdjacentIndices(i, cols, rows);
     }
 
+    // Start with the initial state, index 0, and an empty move list
+    queue.push({ currentState: gridState.map(color => colorMap[color]), index: 0, moves: [] });
+        let takeFromPending = false;
+        let howManyToTakeFromPending = 0;
+        let hoeManyTakenFromPending = 0;
+        let oldMoves = 0;
+        while (queue.length > 0 || pendingQueue.length > 0) {
+
+            if(queue.length === 0) {
+                takeFromPending = true;
+                howManyToTakeFromPending = pendingQueue.length;
+                hoeManyTakenFromPending = 0;
+            } else if(hoeManyTakenFromPending >= howManyToTakeFromPending) {
+                takeFromPending = false;
+            }
+            hoeManyTakenFromPending++; // We could if(takeFromPending) here but it doesn't matter
+
+            const { currentState, index, moves } = takeFromPending ? pendingQueue.shift() : queue.shift();
+
+            if (index >= currentState.length) continue; // Exhausted indexes
+
+            // Base case: check if all squares are red
+            const isWinning = currentState.every(color => color === colorMap['red']);
+            if (isWinning) {
+                console.log("Hint time taken:", performance.now() - timeStart);
+                return moves; // Return moves if winning state found
+            }
+
+            // Bail out if we've checked the maxNumber of moves
+            if(oldMoves !== moves.length) {
+                oldMoves = moves.length;
+                if(maxMoves != null && moves.length >= maxMoves) {
+                    console.log(`Solution is more than ${maxMoves} moves away!`);
+                    return null;
+                }
+            }
+
+            // Convert state to string to check for visited state
+            const stateString = currentState.join('') + "-" + index;
+            if (visitedStates.test(stateString)) continue; // Skip visited states
+            visitedStates.add(stateString); // Mark current state as visited
+
+            // Try changing the current square and adjacent squares
+            const nextState = [...currentState]; // Clone the state
+
+            // Change current square
+            nextState[index] = (nextState[index] + 1) % 3;
+
+            // Change adjacent squares using precomputed adjacent indices
+            for (let adjIndex of adjacentIndicesMap[index]) {
+                nextState[adjIndex] = (nextState[adjIndex] + 1) % 3;
+            }
+
+            // Push the next state to the queue with the updated move
+            pendingQueue.push({ currentState: nextState, index: 0, moves: [...moves, index] });
+
+            // Push the current state with incremented index to explore other possibilities
+            queue.push({ currentState, index: index + 1, moves });
+        }
+
+    console.log("Hint time taken:", performance.now() - timeStart);
     return null; // No winning state found
 };
+
+/*
+export const isGameWinnableSimulatedAnnealing = (base64State, rows, cols) => {
+    const timeStart = performance.now();
+    const gridState = decodeBase64GridState(base64State, rows, cols);
+    console.log("Checking game (simulated annealing)", gridState, rows, cols);
+
+    const adjacentIndicesMap = {};
+
+    // Precompute adjacent indices for each index
+    for (let i = 0; i < rows * cols; i++) {
+        adjacentIndicesMap[i] = getAdjacentIndices(i, cols, rows);
+    }
+
+    const evaluateState = (state) => {
+        // The goal is to have all squares be red (colorMap['red'])
+        return state.reduce((acc, color) => acc + (color === colorMap['red'] ? 0 : 1), 0);
+    };
+
+    let currentState = gridState.map(color => colorMap[color]);
+    let currentScore = evaluateState(currentState);
+    let bestState = [...currentState];
+    let bestScore = currentScore;
+    let temperature = 1.0; // Initial temperature
+    let coolingRate = 0.999; // Cooling rate for annealing
+    let maxIterations = 1000000; // Maximum number of iterations
+    let moves = [];
+    let bestMoves = [];
+
+    const getRandomMove = () => Math.floor(Math.random() * (rows * cols));
+
+
+
+    const applyMove = (state, index) => {
+        const nextState = [...state];
+        nextState[index] = (nextState[index] + 1) % 3;
+        for (let adjIndex of adjacentIndicesMap[index]) {
+            nextState[adjIndex] = (nextState[adjIndex] + 1) % 3;
+        }
+        return nextState;
+    };
+
+    for (let i = 0; i < maxIterations; i++) {
+        const moveIndex = getRandomMove();
+        const nextState = applyMove(currentState, moveIndex);
+        const nextScore = evaluateState(nextState);
+
+        const deltaScore = nextScore - currentScore;
+
+        // Accept the new state if it's better, or with a probability that decreases with temperature
+        if (deltaScore < 0 || Math.exp(-deltaScore / temperature) > Math.random()) {
+            currentState = nextState;
+            currentScore = nextScore;
+            moves.push(moveIndex);
+
+            // Keep track of the best state encountered
+            if (currentScore < bestScore) {
+                bestState = [...currentState];
+                bestScore = currentScore;
+                bestMoves = [...moves];
+            }
+
+            // If the winning state is found, return the solution
+            if (bestScore === 0) {
+                console.log("Simulated Annealing time taken:", performance.now() - timeStart);
+                return bestMoves; // Return the best move sequence found
+            }
+        }
+
+        // Cool down the temperature
+        temperature *= coolingRate;
+    }
+
+    console.log("Simulated Annealing time taken:", performance.now() - timeStart);
+    return bestScore === 0 ? bestMoves : null; // Return best moves if winning state was found
+};
+*/
+
+
+export const removeAllHighlights = () => {
+    const elements = document.getElementsByClassName('hint-highlight');
+    for (let i = 0; i < elements.length; i++) {
+        elements[i].classList.remove("hint-highlight");
+    }
+}
 
 /*
 // Function to create and run the worker
@@ -466,10 +576,10 @@ export const convertCanvasToImgTags = async (canvas2D) => {
     const image = await convertCanvasToImage(canvas2D);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     const width = image.width / 4;
     const height = image.height;
-    
+
     // Set the canvas to match the image dimensions
     canvas.width = width;
     canvas.height = height;
@@ -480,13 +590,13 @@ export const convertCanvasToImgTags = async (canvas2D) => {
     for (let i = 0; i < 4; i++) {
         // Clear the canvas for the new part
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         // Draw part of the image
         ctx.drawImage(image, i * width, 0, width, height, 0, 0, width, height);
-        
+
         // Convert the part into a data URL
         const partDataURL = canvas.toDataURL();
-        
+
         // Add to the imageParts array
         imageParts.push(partDataURL);
     }
@@ -498,7 +608,6 @@ export const convertCanvasToImgTags = async (canvas2D) => {
     }
     return result;
 }
-
 
 export const convertCanvasToImage = (canvas2D) => {
     return new Promise((resolve, reject) => {

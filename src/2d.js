@@ -3,7 +3,8 @@ import {
     getSquareSize,
     decodeWithErrorChecks,
     drawImageTiles,
-    convertCanvasToImgTags
+    convertCanvasToImgTags,
+    removeAllHighlights
 } from './2d-utils';
 
 
@@ -86,7 +87,6 @@ export async function start2d(levelInfo, onWin) {
                     // Adjacent squares
                     let adjacentRow = row + i;
                     let adjacentCol = col + j;
-                    console.log("level info",levelInfo);
                     if (adjacentRow >= 0 && adjacentRow < squaresPerColumn && adjacentCol >= 0 && adjacentCol < squaresPerRow) {
                         let adjacentIndex = adjacentRow * squaresPerRow + adjacentCol;
                         let adjacentSquare = gameContainer.children[adjacentIndex];
@@ -95,6 +95,8 @@ export async function start2d(levelInfo, onWin) {
                 }
             }
         }
+
+        removeAllHighlights();
 
         // Check for win after each click (after some delay so player can register that they won)
         if (checkWin()) {

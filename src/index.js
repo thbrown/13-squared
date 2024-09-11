@@ -1,7 +1,7 @@
 import { start3d, danceCube } from './3d.js';
 import { start2d } from './2d.js';
 import { FireworkEffect } from './fireworks.js';
-import { isGameWinnable, encodeGridStateToBase64, runBFSInWorker, decodeBase64GridState } from './2d-utils';
+import { isGameWinnable, encodeGridStateToBase64 } from './2d-utils';
 
 // Init start screen
 // TODO: select level
@@ -20,13 +20,13 @@ const fireworkEffect = new FireworkEffect(10, canvas);
 
 // Init levels
 const levels = [
-    {mode:"2d", colors:"QA", width:1, height:1},
-    {mode:"2d", colors:"kA", width:1, height:3},
-    {mode:"2d", colors:"GQ", width:1, height:4},
-    {mode:"2d", colors:"SSFA", width:3, height:3},
-    {mode:"2d", colors:"SSFA", width:3, height:4},
-    {mode:"2d", colors:"SCpGRQ", width:3, height:4},
-    {mode:"3d"}];
+    { mode: "2d", colors: "QA", width: 1, height: 1 },
+    { mode: "2d", colors: "kA", width: 1, height: 3 },
+    { mode: "2d", colors: "GQ", width: 1, height: 4 },
+    { mode: "2d", colors: "SSFA", width: 3, height: 3 },
+    { mode: "2d", colors: "SSFA", width: 3, height: 4 },
+    { mode: "2d", colors: "SCpGRQ", width: 3, height: 4 },
+    { mode: "3d" }];
 let levelIndex = 0;
 let currentLevel = levels[levelIndex];
 let unbind2dClickHandler = undefined;
@@ -60,7 +60,7 @@ function disperseSquares() {
 // Add 'explode' effect
 function explodeSquares() {
     // Don't explode the squares if a new game has already started
-    if(startedEndAnimation === false) {
+    if (startedEndAnimation === false) {
         return;
     }
     const squares = document.querySelectorAll(".square");
@@ -80,27 +80,28 @@ const winMessage = document.getElementById('win-message');
 const showWinModal = (final, levelIndex) => {
     const gameContainer = document.getElementById('game-container-2d');
     gameContainer.style.boxShadow = 'unset';
-    const title = document.getElementById('title');  
+    const title = document.getElementById('title');
     title.style.filter = 'invert(1)';
     if (final) {
         winMessage.textContent = `Congratulations! You beat the game!`;
     } else {
-        winMessage.textContent = `Congratulations! You beat level ${levelIndex+1} of ${levels.length}!`;
+        winMessage.textContent = `Congratulations! You beat level ${levelIndex + 1} of ${levels.length}!`;
     }
     document.getElementById('next-level').style.display = 'unset';
     document.getElementById('win-modal').style.display = 'block';
     document.getElementById('controls').style.visibility = 'hidden';
-   
+
 };
 const closeModal = () => {
     document.getElementById('win-modal').style.display = 'none';
     document.getElementById('next-level').style.display = 'none';
+    document.getElementById('hint-modal').style.display = 'none';
 };
 const replay = () => {
     closeModal();
     // TODO: clear 3d state as well?
     initGame(levelIndex);
-    if(unbind2dClickHandler != null) {
+    if (unbind2dClickHandler != null) {
         unbind2dClickHandler();
     }
 };
@@ -108,7 +109,7 @@ const nextLevel = () => {
     closeModal();
     levelIndex++;
     initGame(levelIndex);
-    if(unbind2dClickHandler != null) {
+    if (unbind2dClickHandler != null) {
         unbind2dClickHandler();
     }
 }
@@ -116,27 +117,37 @@ document.getElementById('replay').addEventListener('click', replay);
 document.getElementById('next-level').addEventListener('click', nextLevel);
 
 // Init Controls
-
-document.getElementById('hint').addEventListener('click', async function() {
-    if(currentLevel.mode === "2d") {
+const hintFunction = async (_event, limit = 7) => {
+    if(levelIndex <= 4) {
+        limit = 100; // No need to limit hints for the first few levels, they are small
+    }
+    console.log("Hint with limit", limit);
+    if (currentLevel.mode === "2d") {
         const colorState = encodeGridStateToBase64();
-
-        // Not worker
-        const solution = isGameWinnable(colorState, currentLevel.height, currentLevel.width);
-        console.log("Solution:" , solution);
-        
-        // Worker
-        /*
-        const val = await runBFSInWorker(colorState, currentLevel.height, currentLevel.width);
-        console.log("Worker:", val);
-        */
+        const solution = isGameWinnable(colorState, currentLevel.height, currentLevel.width, limit);
+        console.log("Solution:", solution);
+        if (solution != null && solution.length > 0) {
+            const nextMove = solution[0];
+            const squares = document.getElementsByClassName('square');
+            for (let index = 0; index < squares.length; index++) {
+                const square = squares[index];
+                if (index === nextMove) {
+                    square.classList.add("hint-highlight");
+                }
+            }
+        }
+        if(solution == null) {
+            showHintModal();
+        }
     } else {
         console.log("No hint for 3d");
     }
-});
+}
 
-document.getElementById('skip').addEventListener('click', function() {
-    if(levelIndex === levels.length - 1) {
+document.getElementById('hint').addEventListener('click', hintFunction);
+
+document.getElementById('skip').addEventListener('click', function () {
+    if (levelIndex === levels.length - 1) {
         // For the last level we'll just show the win animation
         win3d();
     } else {
@@ -173,7 +184,7 @@ const initGame = async (index) => {
 
     // Check if this level has been beaten before
     var beaten = localStorage.getItem(LS_NAMESPACE + index);
-    if(beaten === "true") {
+    if (beaten === "true") {
         console.log("Level already beaten", index, beaten);
         document.getElementById('skip').style.display = 'block';
     } else {
@@ -184,12 +195,12 @@ const initGame = async (index) => {
     // Init the game
     currentLevel = levels[index];
     console.log("Init level", index, currentLevel);
-    if(index === 0) {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it 13`;
+    if (index === 0) {
+        document.getElementById('title').textContent = `Level ${index + 1} - Make it 13`;
     } else {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13`;
+        document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13`;
     }
-    if(currentLevel.mode === "2d") {
+    if (currentLevel.mode === "2d") {
         document.getElementById('game-container-wrapper-2d').style.visibility = 'unset';
         document.getElementById('game-canvas-3d').style.visibility = 'hidden';
         unbind2dClickHandler = await start2d(currentLevel, () => {
@@ -199,12 +210,11 @@ const initGame = async (index) => {
             disperseSquares();
             showWinModal(false, levelIndex);
         })
-        console.log("Click unbond", unbind2dClickHandler);
     } else {
-        document.getElementById('title').textContent = `Level ${index+1} - Make it all 13 Try dragging`;
+        document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
-        start3d(()=> {
+        start3d(() => {
             // onWin function
             localStorage.setItem(LS_NAMESPACE + index, "true");
             win3d();
@@ -212,15 +222,28 @@ const initGame = async (index) => {
     }
 }
 
-document.getElementById('close-intro').addEventListener('click', function() {
+document.getElementById('close-intro').addEventListener('click', function () {
     document.getElementById('game-container').style.visibility = 'unset';
     document.getElementById('intro-modal').style.display = 'none';
     console.log("Starting game");
 });
 
-document.getElementById('curmudgeon').addEventListener('click', function() {
+document.getElementById('curmudgeon').addEventListener('click', function () {
     window.location.href = "https://dev.js13kgames.com/2024/games";
 });
+
+document.getElementById('okay').addEventListener('click', function () {
+    closeModal();
+});
+
+document.getElementById('wait').addEventListener('click', function () {
+    closeModal();
+    hintFunction(null, null);
+});
+
+const showHintModal = () => {
+    document.getElementById('hint-modal').style.display = 'block';
+};
 
 // Start game
 initGame(levelIndex);

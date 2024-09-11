@@ -22,6 +22,16 @@
             <button class="control-button glow-on-hover" id="skip">Skip Level</button>
         </div>
     </div>
+    <!-- Hint Modal -->
+    <div id="hint-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="hint-message">Hint failed. Unable to calculate best move because a solution is more than 7 clicks away!</h2>
+            <div class="modal-buttons">
+                <button id="okay" class="control-button glow-on-hover">Okay, I guess I'll have to think</button>
+                <dutton id="wait" class="control-button glow-on-hover">I'm intellectually lazy, but very patient and have a device with lots of RAM. I'll wait.</button>
+            </div>
+        </div>
+    </div>
     <!-- Win Modal -->
     <div id="win-modal" class="modal">
         <div class="modal-content">
@@ -327,17 +337,15 @@
             display: none;
         }
 
-        /* https://isotropic.co/tool/hex-color-to-css-filter/ */
-        .green-filter {
-            filter: invert(87%) sepia(25%) saturate(612%) hue-rotate(61deg) brightness(90%) contrast(85%);
+        .hint-highlight {
+            animation: hint-highlight .5s infinite;
         }
 
-        .red-filter {
-            filter: invert(64%) sepia(45%) saturate(851%) hue-rotate(310deg) brightness(103%) contrast(101%);
-        }
-
-        .blue-filter {
-            filter: invert(70%) sepia(48%) saturate(5255%) hue-rotate(208deg) brightness(104%) contrast(101%);
+        @keyframes hint-highlight {
+            50% {
+                -webkit-filter: brightness(130%); 
+                filter: brightness(130%);
+            }
         }
     </style>
     <!-- vertex shader -->
