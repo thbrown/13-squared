@@ -22,12 +22,10 @@ class FireworkParticle {
         this.opacity = Math.max(0, this.opacity);
     }
     
-
     draw(ctx) {
         ctx.save();
         ctx.globalAlpha = this.opacity;
         ctx.fillStyle = this.color;
-
 
         if(Math.random() > 1) {
             ctx.beginPath();

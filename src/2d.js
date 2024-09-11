@@ -8,22 +8,29 @@ import {
     getAdjacentIndices,
     getSquareSize,
     decodeWithErrorChecks,
-    isGameWinnable
+    isGameWinnable,
+    drawImageTiles,
+    convertCanvasToImage,
+    convertCanvasToImgTags
 } from './2d-utils';
 
 const MARGIN = 50;
 
-export function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
+export async function start2d(RED_SVG, BLUE_SVG, GREEN_SVG, levelInfo, onWin) {
     const gameContainer = document.getElementById('game-container-2d');
     const gameContainerWrapper = document.getElementById('game-container-wrapper-2d');
     //gameContainerWrapper.style.margin = `${MARGIN}px`;
 
-    // TODO: clean up old levels?
+    // Make tiles square
+    const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
+    drawImageTiles(tileDetails, false);
+    const imageTags = await convertCanvasToImgTags(document.getElementById("canvas-img"));
+    console.log("IMAGE TAGS", imageTags);
 
     // Wrap svgs so we can apply css zoom
-    RED_SVG = `<div class="svg">${RED_SVG}</div>`;
-    BLUE_SVG = `<div class="svg">${BLUE_SVG}</div>`;
-    GREEN_SVG = `<div class="svg">${GREEN_SVG}</div>`;
+    RED_SVG = imageTags[1];
+    BLUE_SVG = imageTags[0];
+    GREEN_SVG = imageTags[2];
 
     //document.addEventListener('DOMContentLoaded', (event) => {
     const colors = ['red', 'blue', 'green'];

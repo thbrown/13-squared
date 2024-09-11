@@ -14,6 +14,7 @@ import { Text } from "./actors/Text.js";
 
 
 import { resizeCanvasToDisplaySize, createProgramFromScripts, perspective, lookAt, inverse, multiply, xRotate, yRotate } from './webgl.js';
+import { convertCanvasToImage, drawImageTiles } from './2d-utils.js';
 
 let dance = false;
 export function danceCube() {
@@ -21,6 +22,8 @@ export function danceCube() {
 }
 
 export function start3d(svgs) {
+  const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
+  drawImageTiles(tileDetails, true);
 
   const TEX_WATER = [0, 0, 0.25, 0, 0, 1, 0, 1, 0.25, 0, 0.25, 1];
   const TEX_TREE = [0.25, 0, 0.5, 0, 0.25, 1, 0.25, 1, 0.5, 0, 0.5, 1];
@@ -33,15 +36,17 @@ export function start3d(svgs) {
   const TEX_STAR_I = [0.75, 0, 1, 0, 0.75, 1, 1, 0, 1, 1, 0.75, 1];
 
   const MAX = 3;
-  const INITIAL_FACE_COLORS = randStart(6);
+  //const INITIAL_FACE_COLORS = randStart(6);
+  const INITIAL_FACE_COLORS = [0,1,2,0,1,2]
 
+  /*
   function randStart(num) {
     const data = [];
     for (let i = 0; i < num; i++) {
       data.push(Math.floor(Math.random() * MAX));
     }
     return data;
-  }
+  }*/
 
   function main() {
     var canvas = document.querySelector("#game-canvas-3d");
@@ -174,6 +179,7 @@ export function start3d(svgs) {
 
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
+        e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
     
     gl.canvas.addEventListener("touchmove", handleMovement);
@@ -189,26 +195,8 @@ export function start3d(svgs) {
         e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
 
-    // Get the canvas and context
-    const canvas2D = document.getElementById("canvas-img");
-    const context = canvas2D.getContext("2d");
-
-    // Define background colors
-    const backgroundColors = ["blue", "green", "red", "yellow"];
-
-    // Need to set canvas size too if this is modified
-    const squareDim = 2048;
-
-    // Pre-fill the canvas with background colors
-    backgroundColors.forEach((color, index) => {
-      context.fillStyle = color;
-      context.fillRect(index * squareDim, 0, squareDim, squareDim);
-      context.strokeStyle = "black";
-      context.lineWidth = 10;
-      context.strokeRect(index * squareDim, 0, squareDim, squareDim);
-    });
-
     // Async function to draw an SVG to canvas
+    /*
     async function drawSVGToCanvas(svg, x, y) {
       return new Promise((resolve, reject) => {
         const svgData = new XMLSerializer().serializeToString(svg);
@@ -241,7 +229,7 @@ export function start3d(svgs) {
         const url = URL.createObjectURL(svgBlob);
         img.src = url;
       });
-    }
+    }*/
 
     const WIN_VALUE = 2;
     function checkWin() {
@@ -269,6 +257,7 @@ export function start3d(svgs) {
     }
 
     async function loadImages() {
+      /*
       const promises = Array.from(svgs).map((svg, index) =>
         drawSVGToCanvas(svg, index * squareDim, 0)
       );
@@ -280,8 +269,9 @@ export function start3d(svgs) {
         console.error("Error drawing SVGs to canvas:", error);
         alert("Error drawing SVGs to canvas:" + error);
       }
+      */
 
-      const image = await convertCanvasToImage();
+      const image = await convertCanvasToImage(document.getElementById("canvas-img"));
 
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -329,23 +319,6 @@ export function start3d(svgs) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
       new Uint8Array([0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 0]));
-
-    function convertCanvasToImage() {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = function () {
-          try {
-            resolve(image);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        image.onerror = function (error) {
-          reject(error);
-        };
-        image.src = canvas2D.toDataURL("image/png");
-      });
-    }
 
     function degToRad(d) {
       return d * Math.PI / 180;
