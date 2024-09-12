@@ -22,9 +22,8 @@ export function danceCube() {
 }
 
 export function start3d(onWin) {
-  const tileDetails = [{ color: "#ff4949", value: "11" }, { color: "#ffcc00", value: "13" }, { color: "#4caf50", value: "12" }, { color: "#9c27b0", value: "14" }];
+  const tileDetails = [{ color: "#ff4949", value: "11" }, { color: "#9c27b0", value: "14" }, { color: "#4caf50", value: "12" }, { color: "#ffcc00", value: "13" }];
   drawImageTiles(tileDetails, true);
-
 
   const TEX_WATER = [0, 0, 0.25, 0, 0, 1, 0, 1, 0.25, 0, 0.25, 1];
   const TEX_TREE = [0.25, 0, 0.5, 0, 0.25, 1, 0.25, 1, 0.5, 0, 0.5, 1];
@@ -42,8 +41,12 @@ export function start3d(onWin) {
 
   // State
   let faceState = INITIAL_FACE_COLORS;
-  let faceToHighlight = -1;
+  let faceToHighlight = 2;
   let parentGl = null;
+
+  var texcoordBuffer = null;
+  var flashBuffer = null;
+  var positionBuffer = null;
 
   /*
   function randStart(num) {
@@ -61,6 +64,10 @@ export function start3d(onWin) {
       return;
     }
     parentGl = gl;
+
+    texcoordBuffer = gl.createBuffer();
+    flashBuffer = gl.createBuffer();
+    positionBuffer = gl.createBuffer();
 
     // Mouse Stuff
     let mouseX = -1;
@@ -130,8 +137,9 @@ export function start3d(onWin) {
         default:
           console.log("Unknown color", colorAtMouse);
       }
-      //faceToHighlight = -1;
-      //setFlash(gl, faceToHighlight);
+      faceToHighlight = -1;
+      gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
+      setFlash(gl, faceToHighlight);
       updateTexture();
       setTimeout(checkWin, 100);
     }
@@ -197,7 +205,7 @@ export function start3d(onWin) {
       e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
 
-    const WIN_VALUE = 2;
+    const WIN_VALUE = 0; // This corresponds to "red" in utils
     function checkWin() {
       let win = true;
       for (let i = 0; i < faceState.length; i++) {
@@ -214,6 +222,7 @@ export function start3d(onWin) {
     async function updateTexture() {
       console.log("Changing texture...", faceState);
       try {
+        gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
         setTexcoords(gl, faceState);
         console.log("Texture changed successfully!");
       } catch (error) {
@@ -255,23 +264,20 @@ export function start3d(onWin) {
 
     var positionLocation = gl.getAttribLocation(displayProgram, "a_position");
     var texcoordLocation = gl.getAttribLocation(displayProgram, "a_texcoord");
-    //var flashLocation = gl.getAttribLocation(displayProgram, "a_flash");
+    var flashLocation = gl.getAttribLocation(displayProgram, "a_flash");
 
     var matrixLocation = gl.getUniformLocation(displayProgram, "u_matrix");
     var textureLocation = gl.getUniformLocation(displayProgram, "u_texture");
     var timeLocation = gl.getUniformLocation(displayProgram, "u_time");
 
-    var positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     setGeometry(gl);
 
-    var texcoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
     setTexcoords(gl, INITIAL_FACE_COLORS);
 
-    //var flashBuffer = gl.createBuffer();
-    //gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
-    //setFlash(gl, faceToHighlight);
+    gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
+    setFlash(gl, faceToHighlight);
 
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -367,13 +373,13 @@ export function start3d(onWin) {
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
+      gl.enableVertexAttribArray(flashLocation);
+      gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
+      gl.vertexAttribPointer(flashLocation, 1, gl.FLOAT, false, 0, 0);
+
       gl.enableVertexAttribArray(texcoordLocation);
       gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
       gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
-
-      //gl.enableVertexAttribArray(flashLocation);
-      //gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
-      //gl.vertexAttribPointer(flashLocation, 1, gl.FLOAT, false, 0, 0);
 
       gl.uniformMatrix4fv(matrixLocation, false, matrix);
       gl.uniform1i(textureLocation, 0);
@@ -452,7 +458,7 @@ export function start3d(onWin) {
 
   function setFlash(gl, index) {
     let flashData = new Float32Array(36); // 12 triangles * 3 vertices per triangle = 36 elements
-  
+
     // Set the corresponding set of 6 values to 1.0 based on the index
     let start = index * 6;
     for (let i = start; i < start + 6; i++) {
@@ -460,7 +466,7 @@ export function start3d(onWin) {
     }
 
     console.log("Flash data:", flashData.length, flashData);
-  
+
     // Update the buffer with the new flash data
     gl.bufferData(gl.ARRAY_BUFFER, flashData, gl.STATIC_DRAW);
   }
@@ -512,8 +518,9 @@ export function start3d(onWin) {
     highlightFace: (index) => {
       console.log("Highlighting face:", index);
       faceToHighlight = index;
-      console.log("No 3d hints yet");
-      //setFlash(parentGl, faceToHighlight);
+      //console.log("No 3d hints yet");
+      parentGl.bindBuffer(parentGl.ARRAY_BUFFER, flashBuffer);
+      setFlash(parentGl, faceToHighlight);
     }
   };
 

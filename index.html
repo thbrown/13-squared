@@ -350,29 +350,29 @@
     <script id="vertex-shader-3d" type="x-shader/x-vertex">
       attribute vec4 a_position;
       attribute vec2 a_texcoord;
-      //attribute float a_flash;
+      attribute float a_flash;
       uniform mat4 u_matrix;
       varying vec2 v_texcoord;
-      //varying float v_flash;
+      varying float v_flash;
       void main() {
         gl_Position = u_matrix * a_position;
         v_texcoord = a_texcoord;
-        //v_flash = a_flash;
+        v_flash = a_flash;
       }
     </script>
     <!-- fragment shader -->
     <script id="fragment-shader-3d" type="x-shader/x-fragment">
       precision mediump float;
       varying vec2 v_texcoord;
-      //varying float v_flash;
+      varying float v_flash;
       uniform sampler2D u_texture;
       uniform float u_time;
       void main() {
         vec4 color = texture2D(u_texture, v_texcoord);
-        //if(false) {
-        //    float brightness = 1.4 + 0.2 * sin(u_time * 10.0);
-        //    color.rgb = min(color.rgb * brightness, 1.0);
-        //}
+        if(v_flash > 0.5) {
+            float brightness = 1.4 + 0.2 * sin(u_time * 10.0);
+            color.rgb = min(color.rgb * brightness, 1.0);
+        }
         gl_FragColor = color;
       }
     </script>
