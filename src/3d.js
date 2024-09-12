@@ -37,7 +37,10 @@ export function start3d(onWin) {
 
   const MAX = 3;
   //const INITIAL_FACE_COLORS = randStart(6);
-  const INITIAL_FACE_COLORS = [0,1,2,0,1,2]
+  const INITIAL_FACE_COLORS = [0,1,2,0,1,2];
+
+  // State
+  let faceState = INITIAL_FACE_COLORS;
 
   /*
   function randStart(num) {
@@ -62,9 +65,6 @@ export function start3d(onWin) {
     let drag = false;
     let cumulativeMovement = 0;
 
-    // State
-    let faceState = INITIAL_FACE_COLORS;
-
     // Model
     var fieldOfViewRadians = degToRad(60);
     var modelXRotationRadians = degToRad(0);
@@ -88,7 +88,6 @@ export function start3d(onWin) {
             y: e.clientY - rect.top
         };
     }
-
 
     const handleClickOrTap = (e) => {
       if (cumulativeMovement > 10) {
@@ -470,5 +469,9 @@ export function start3d(onWin) {
   }
 
   main();
+
+  return () => {
+    return faceState;
+  };
 
 }

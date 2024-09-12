@@ -1,7 +1,7 @@
 import { start3d, danceCube } from './3d.js';
 import { start2d } from './2d.js';
 import { FireworkEffect } from './fireworks.js';
-import { isGameWinnable, encodeGridStateToBase64 } from './2d-utils';
+import { encodeGridStateToBase64, isGameWinnable2d, isGameWinnable3d, binaryToUrlSafeBase64, encodeArrayToBinary } from './2d-utils';
 
 // Init start screen
 // TODO: select level
@@ -30,6 +30,7 @@ const levels = [
 let levelIndex = 0;
 let currentLevel = levels[levelIndex];
 let unbind2dClickHandler = undefined;
+let getFaceState = undefined;
 
 //=======================================================
 // Function to get a random value between min and max
@@ -118,13 +119,13 @@ document.getElementById('next-level').addEventListener('click', nextLevel);
 
 // Init Controls
 const hintFunction = async (_event, limit = 7) => {
-    if(levelIndex <= 4) {
+    if (levelIndex <= 4) {
         limit = 100; // No need to limit hints for the first few levels, they are small
     }
     console.log("Hint with limit", limit);
     if (currentLevel.mode === "2d") {
         const colorState = encodeGridStateToBase64();
-        const solution = isGameWinnable(colorState, currentLevel.height, currentLevel.width, limit);
+        const solution = isGameWinnable2d(colorState, currentLevel.height, currentLevel.width, limit);
         console.log("Solution:", solution);
         if (solution != null && solution.length > 0) {
             const nextMove = solution[0];
@@ -136,11 +137,15 @@ const hintFunction = async (_event, limit = 7) => {
                 }
             }
         }
-        if(solution == null) {
+        if (solution == null) {
             showHintModal();
         }
     } else {
-        console.log("No hint for 3d");
+        const colorState = binaryToUrlSafeBase64(encodeArrayToBinary(getFaceState()));
+        console.log(colorState);
+        const solution = isGameWinnable3d(colorState);
+        console.log("3d Solution:", solution);
+        //console.log("No hint for 3d");
     }
 }
 
@@ -214,7 +219,7 @@ const initGame = async (index) => {
         document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
-        start3d(() => {
+        getFaceState = start3d(() => {
             // onWin function
             localStorage.setItem(LS_NAMESPACE + index, "true");
             win3d();

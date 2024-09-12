@@ -24,6 +24,15 @@ export const encodeToBinary = (gridState) => {
     return binaryString;
 };
 
+export const encodeArrayToBinary = (valArr) => {
+    let binaryString = '';
+    valArr.forEach(val => {
+        const binaryCode = val.toString(2).padStart(2, '0');
+        binaryString += binaryCode;
+    });
+    return binaryString;
+};
+
 // Function to encode the grid state to base64
 export const encodeGridStateToBase64 = () => {
     const squares = document.querySelectorAll('.square');
@@ -48,9 +57,9 @@ export const binaryToUrlSafeBase64 = (binaryString) => {
 };
 
 // Function to decode the base64 encoded grid state
-export const decodeBase64GridState = (base64State, rows, cols) => {
+export const decodeBase64GridState = (base64State, totalElements) => {
     const binaryString = urlSafeBase64ToBinary(base64State);
-    const expectedLength = rows * cols * 2; // Each color is represented by 2 bits
+    const expectedLength = totalElements * 2; // Each color is represented by 2 bits
 
     // Trim the binary string to the expected length in case there is padding
     const trimmedBinaryString = binaryString.substring(0, expectedLength);
@@ -166,17 +175,44 @@ export const getSquareSize = (rows, cols) => {
 
 export const decodeWithErrorChecks = (colorString, rows, cols) => {
     try {
-        return decodeBase64GridState(colorString, cols, rows)
+        return decodeBase64GridState(colorString, cols * rows)
     } catch (e) {
         console.warn("Error decoding", colorString, rows, cols, "using random colors instead.", e);
         return null;
     }
 }
 
-export const isGameWinnable = (base64State, rows, cols, maxMoves) => {
+export const getAdjacentFaces = (index) => {
+    switch (index) {
+        case 0:
+            return [4, 2, 5, 3];
+        case 1:
+            return [4, 2, 5, 3];
+        case 2:
+            return [4, 5, 0, 1];
+        case 3:
+            return [4, 5, 0, 1];
+        case 4:
+            return [2, 3, 0, 1];
+        case 5:
+            return [2, 3, 0, 1];
+        default:
+            throw new Error("Invalid face index");
+    }
+}
+
+export const isGameWinnable2d = (base64State, rows, cols, maxMoves) => {
+    return isGameWinnable(base64State, rows, cols, false, maxMoves);
+}
+
+export const isGameWinnable3d = (base64State) => {
+    return isGameWinnable(base64State, 2, 3, true); // row/col not quite right but 2*3 is 6 for 6 faces of the cube and that's what matters
+}
+
+const isGameWinnable = (base64State, rows, cols, is3d, maxMoves) => {
     const timeStart = performance.now();
-    const gridState = decodeBase64GridState(base64State, rows, cols);
-    console.log("Checking game", gridState, rows, cols);
+    const gridState = decodeBase64GridState(base64State, rows * cols);
+    console.log("Checking game", gridState, rows, cols, is3d);
 
     // Use Bloom filter for visited states
     const visitedStates = new BloomFilter(
@@ -188,70 +224,72 @@ export const isGameWinnable = (base64State, rows, cols, maxMoves) => {
     const pendingQueue = []; // Will be added to the queue when queue is empty
     const adjacentIndicesMap = {}; // Precompute adjacent indices (so we can evaluate shorter moves first)
 
-    // Precompute adjacent indices for each index
+    // Pre-compute adjacent indices for each index
     for (let i = 0; i < rows * cols; i++) {
-        adjacentIndicesMap[i] = getAdjacentIndices(i, cols, rows);
+        adjacentIndicesMap[i] = is3d ? getAdjacentFaces(i) : getAdjacentIndices(i, cols, rows);
     }
+
+    console.log("Adjacent indices", adjacentIndicesMap);
 
     // Start with the initial state, index 0, and an empty move list
     queue.push({ currentState: gridState.map(color => colorMap[color]), index: 0, moves: [] });
-        let takeFromPending = false;
-        let howManyToTakeFromPending = 0;
-        let hoeManyTakenFromPending = 0;
-        let oldMoves = 0;
-        while (queue.length > 0 || pendingQueue.length > 0) {
+    let takeFromPending = false;
+    let howManyToTakeFromPending = 0;
+    let hoeManyTakenFromPending = 0;
+    let oldMoves = 0;
+    while (queue.length > 0 || pendingQueue.length > 0) {
 
-            if(queue.length === 0) {
-                takeFromPending = true;
-                howManyToTakeFromPending = pendingQueue.length;
-                hoeManyTakenFromPending = 0;
-            } else if(hoeManyTakenFromPending >= howManyToTakeFromPending) {
-                takeFromPending = false;
-            }
-            hoeManyTakenFromPending++; // We could if(takeFromPending) here but it doesn't matter
-
-            const { currentState, index, moves } = takeFromPending ? pendingQueue.shift() : queue.shift();
-
-            if (index >= currentState.length) continue; // Exhausted indexes
-
-            // Base case: check if all squares are red
-            const isWinning = currentState.every(color => color === colorMap['red']);
-            if (isWinning) {
-                console.log("Hint time taken:", performance.now() - timeStart);
-                return moves; // Return moves if winning state found
-            }
-
-            // Bail out if we've checked the maxNumber of moves
-            if(oldMoves !== moves.length) {
-                oldMoves = moves.length;
-                if(maxMoves != null && moves.length >= maxMoves) {
-                    console.log(`Solution is more than ${maxMoves} moves away!`);
-                    return null;
-                }
-            }
-
-            // Convert state to string to check for visited state
-            const stateString = currentState.join('') + "-" + index;
-            if (visitedStates.test(stateString)) continue; // Skip visited states
-            visitedStates.add(stateString); // Mark current state as visited
-
-            // Try changing the current square and adjacent squares
-            const nextState = [...currentState]; // Clone the state
-
-            // Change current square
-            nextState[index] = (nextState[index] + 1) % 3;
-
-            // Change adjacent squares using precomputed adjacent indices
-            for (let adjIndex of adjacentIndicesMap[index]) {
-                nextState[adjIndex] = (nextState[adjIndex] + 1) % 3;
-            }
-
-            // Push the next state to the queue with the updated move
-            pendingQueue.push({ currentState: nextState, index: 0, moves: [...moves, index] });
-
-            // Push the current state with incremented index to explore other possibilities
-            queue.push({ currentState, index: index + 1, moves });
+        if (queue.length === 0) {
+            takeFromPending = true;
+            howManyToTakeFromPending = pendingQueue.length;
+            hoeManyTakenFromPending = 0;
+        } else if (hoeManyTakenFromPending >= howManyToTakeFromPending) {
+            takeFromPending = false;
         }
+        hoeManyTakenFromPending++; // We could if(takeFromPending) here but it doesn't matter
+
+        const { currentState, index, moves } = takeFromPending ? pendingQueue.shift() : queue.shift();
+
+        if (index >= currentState.length) continue; // Exhausted indexes
+
+        // Base case: check if all squares are red
+        const isWinning = currentState.every(color => color === colorMap['red']);
+        if (isWinning) {
+            console.log("Hint time taken:", performance.now() - timeStart);
+            return moves; // Return moves if winning state found
+        }
+
+        // Bail out if we've checked the maxNumber of moves
+        if (oldMoves !== moves.length) {
+            oldMoves = moves.length;
+            if (maxMoves != null && moves.length >= maxMoves) {
+                console.log(`Solution is more than ${maxMoves} moves away!`);
+                return null;
+            }
+        }
+
+        // Convert state to string to check for visited state
+        const stateString = currentState.join('') + "-" + index;
+        if (visitedStates.test(stateString)) continue; // Skip visited states
+        visitedStates.add(stateString); // Mark current state as visited
+
+        // Try changing the current square and adjacent squares
+        const nextState = [...currentState]; // Clone the state
+
+        // Change current square
+        nextState[index] = (nextState[index] + 1) % 3;
+
+        // Change adjacent squares using precomputed adjacent indices
+        for (let adjIndex of adjacentIndicesMap[index]) {
+            nextState[adjIndex] = (nextState[adjIndex] + 1) % 3;
+        }
+
+        // Push the next state to the queue with the updated move
+        pendingQueue.push({ currentState: nextState, index: 0, moves: [...moves, index] });
+
+        // Push the current state with incremented index to explore other possibilities
+        queue.push({ currentState, index: index + 1, moves });
+    }
 
     console.log("Hint time taken:", performance.now() - timeStart);
     return null; // No winning state found
