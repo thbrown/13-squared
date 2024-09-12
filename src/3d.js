@@ -22,8 +22,9 @@ export function danceCube() {
 }
 
 export function start3d(onWin) {
-  const tileDetails = [{color:"#ff4949", value:"11"}, {color:"#ffcc00", value:"13"}, {color:"#4caf50", value:"12"}, {color:"#9c27b0", value:"14"}];
+  const tileDetails = [{ color: "#ff4949", value: "11" }, { color: "#ffcc00", value: "13" }, { color: "#4caf50", value: "12" }, { color: "#9c27b0", value: "14" }];
   drawImageTiles(tileDetails, true);
+
 
   const TEX_WATER = [0, 0, 0.25, 0, 0, 1, 0, 1, 0.25, 0, 0.25, 1];
   const TEX_TREE = [0.25, 0, 0.5, 0, 0.25, 1, 0.25, 1, 0.5, 0, 0.5, 1];
@@ -37,10 +38,12 @@ export function start3d(onWin) {
 
   const MAX = 3;
   //const INITIAL_FACE_COLORS = randStart(6);
-  const INITIAL_FACE_COLORS = [0,1,2,0,1,2];
+  const INITIAL_FACE_COLORS = [0, 1, 2, 0, 1, 2];
 
   // State
   let faceState = INITIAL_FACE_COLORS;
+  let faceToHighlight = -1;
+  let parentGl = null;
 
   /*
   function randStart(num) {
@@ -57,6 +60,7 @@ export function start3d(onWin) {
     if (!gl) {
       return;
     }
+    parentGl = gl;
 
     // Mouse Stuff
     let mouseX = -1;
@@ -71,22 +75,22 @@ export function start3d(onWin) {
     var modelYRotationRadians = degToRad(0);
 
     function getEventPosition(e) {
-        const rect = canvas.getBoundingClientRect();
-        if (e.touches && e.touches.length > 0) {
-            return {
-                x: e.touches[0].clientX - rect.left,
-                y: e.touches[0].clientY - rect.top
-            };
-        } else if (e.changedTouches && e.changedTouches.length > 0) {
-            return {
-                x: e.changedTouches[0].clientX - rect.left,
-                y: e.changedTouches[0].clientY - rect.top
-            };
-        }
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches && e.touches.length > 0) {
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
         };
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        return {
+          x: e.changedTouches[0].clientX - rect.left,
+          y: e.changedTouches[0].clientY - rect.top
+        };
+      }
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
     }
 
     const handleClickOrTap = (e) => {
@@ -126,69 +130,71 @@ export function start3d(onWin) {
         default:
           console.log("Unknown color", colorAtMouse);
       }
+      //faceToHighlight = -1;
+      //setFlash(gl, faceToHighlight);
       updateTexture();
       setTimeout(checkWin, 100);
     }
-    
-    function handleMovement(e) {
-        e.preventDefault();
-        const { x, y } = getEventPosition(e);
-        mouseX = x;
-        mouseY = y;
-    
-        if (drag) {
-            let movementX = e.touches ? e.touches[0].clientX - lastTouchX : e.movementX;
-            let movementY = e.touches ? e.touches[0].clientY - lastTouchY : e.movementY;
-    
-            cumulativeMovement += Math.abs(movementX) + Math.abs(movementY);
 
-            modelYRotationRadians += (movementX / 100);
-            modelXRotationRadians += (movementY / 100);
-    
-            if (e.touches) {
-                lastTouchX = e.touches[0].clientX;
-                lastTouchY = e.touches[0].clientY;
-            }
+    function handleMovement(e) {
+      e.preventDefault();
+      const { x, y } = getEventPosition(e);
+      mouseX = x;
+      mouseY = y;
+
+      if (drag) {
+        let movementX = e.touches ? e.touches[0].clientX - lastTouchX : e.movementX;
+        let movementY = e.touches ? e.touches[0].clientY - lastTouchY : e.movementY;
+
+        cumulativeMovement += Math.abs(movementX) + Math.abs(movementY);
+
+        modelYRotationRadians += (movementX / 100);
+        modelXRotationRadians += (movementY / 100);
+
+        if (e.touches) {
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
         }
+      }
     }
-    
+
     // For desktop: Mouse movement and drag
     gl.canvas.addEventListener("mousemove", handleMovement);
     gl.canvas.addEventListener("mousedown", (e) => {
-        drag = true;
-        cumulativeMovement = 0;
+      drag = true;
+      cumulativeMovement = 0;
     });
-    
+
     gl.canvas.addEventListener("mouseup", (e) => {
-        drag = false;
+      drag = false;
     });
-    
+
     // For mobile: Touch movement and drag
     let lastTouchX = 0, lastTouchY = 0;
     gl.canvas.addEventListener("touchstart", (e) => {
-        drag = true;
-        cumulativeMovement = 0;
-    
-        const { x, y } = getEventPosition(e);
-        mouseX = x;
-        mouseY = y;
+      drag = true;
+      cumulativeMovement = 0;
 
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-        e.preventDefault();  // Prevent any default scrolling behavior on mobile
+      const { x, y } = getEventPosition(e);
+      mouseX = x;
+      mouseY = y;
+
+      lastTouchX = e.touches[0].clientX;
+      lastTouchY = e.touches[0].clientY;
+      e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
-    
+
     gl.canvas.addEventListener("touchmove", handleMovement);
-    
+
     gl.canvas.addEventListener("touchend", (e) => {
-        drag = false;
+      drag = false;
     });
-    
+
     // Handle clicks or taps
     gl.canvas.addEventListener("click", handleClickOrTap);
     gl.canvas.addEventListener("touchend", (e) => {
-        handleClickOrTap(e);
-        e.preventDefault();  // Prevent any default scrolling behavior on mobile
+      handleClickOrTap(e);
+      e.preventDefault();  // Prevent any default scrolling behavior on mobile
     });
 
     const WIN_VALUE = 2;
@@ -249,9 +255,11 @@ export function start3d(onWin) {
 
     var positionLocation = gl.getAttribLocation(displayProgram, "a_position");
     var texcoordLocation = gl.getAttribLocation(displayProgram, "a_texcoord");
+    //var flashLocation = gl.getAttribLocation(displayProgram, "a_flash");
 
     var matrixLocation = gl.getUniformLocation(displayProgram, "u_matrix");
     var textureLocation = gl.getUniformLocation(displayProgram, "u_texture");
+    var timeLocation = gl.getUniformLocation(displayProgram, "u_time");
 
     var positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -260,6 +268,10 @@ export function start3d(onWin) {
     var texcoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
     setTexcoords(gl, INITIAL_FACE_COLORS);
+
+    //var flashBuffer = gl.createBuffer();
+    //gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
+    //setFlash(gl, faceToHighlight);
 
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -273,7 +285,10 @@ export function start3d(onWin) {
     requestAnimationFrame(drawScene);
 
     // Draw the scene.
+    let startTime = Date.now();
     function drawScene() {
+      let elapsedTime = (Date.now() - startTime) / 1000.0;
+
       resizeCanvasToDisplaySize(gl.canvas);
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       gl.enable(gl.CULL_FACE);
@@ -283,12 +298,12 @@ export function start3d(onWin) {
 
       // Dance cube (if enabled)  ==========================================
       if (dance) {
-        const fovAdjustment = degToRad(1);       
+        const fovAdjustment = degToRad(1);
         fieldOfViewRadians = Math.min(Math.PI, fieldOfViewRadians + fovAdjustment);
-      
+
         const randomXRotation = degToRad(10);
         const randomYRotation = degToRad(10);
-        
+
         modelXRotationRadians += randomXRotation;
         modelYRotationRadians += randomYRotation;
       }
@@ -356,8 +371,13 @@ export function start3d(onWin) {
       gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
       gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
+      //gl.enableVertexAttribArray(flashLocation);
+      //gl.bindBuffer(gl.ARRAY_BUFFER, flashBuffer);
+      //gl.vertexAttribPointer(flashLocation, 1, gl.FLOAT, false, 0, 0);
+
       gl.uniformMatrix4fv(matrixLocation, false, matrix);
       gl.uniform1i(textureLocation, 0);
+      gl.uniform1f(timeLocation, elapsedTime);
 
       gl.drawArrays(gl.TRIANGLES, 0, 36);
 
@@ -430,6 +450,21 @@ export function start3d(onWin) {
     );
   }
 
+  function setFlash(gl, index) {
+    let flashData = new Float32Array(36); // 12 triangles * 3 vertices per triangle = 36 elements
+  
+    // Set the corresponding set of 6 values to 1.0 based on the index
+    let start = index * 6;
+    for (let i = start; i < start + 6; i++) {
+      flashData[i] = 1.0;
+    }
+
+    console.log("Flash data:", flashData.length, flashData);
+  
+    // Update the buffer with the new flash data
+    gl.bufferData(gl.ARRAY_BUFFER, flashData, gl.STATIC_DRAW);
+  }
+
   function getTextureTile(index, invert = false) {
     if (index === 0) {
       return invert ? TEX_WATER_I : TEX_WATER;
@@ -470,8 +505,16 @@ export function start3d(onWin) {
 
   main();
 
-  return () => {
-    return faceState;
+  return {
+    getFaceState: () => {
+      return faceState;
+    },
+    highlightFace: (index) => {
+      console.log("Highlighting face:", index);
+      faceToHighlight = index;
+      console.log("No 3d hints yet");
+      //setFlash(parentGl, faceToHighlight);
+    }
   };
 
 }

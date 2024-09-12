@@ -21,16 +21,16 @@ const fireworkEffect = new FireworkEffect(10, canvas);
 // Init levels
 const levels = [
     { mode: "2d", colors: "QA", width: 1, height: 1 },
-    { mode: "2d", colors: "kA", width: 1, height: 3 },
-    { mode: "2d", colors: "GQ", width: 1, height: 4 },
-    { mode: "2d", colors: "SSFA", width: 3, height: 3 },
-    { mode: "2d", colors: "SSFA", width: 3, height: 4 },
-    { mode: "2d", colors: "SCpGRQ", width: 3, height: 4 },
+    //{ mode: "2d", colors: "kA", width: 1, height: 3 },
+    //{ mode: "2d", colors: "GQ", width: 1, height: 4 },
+    //{ mode: "2d", colors: "SSFA", width: 3, height: 3 },
+    //{ mode: "2d", colors: "SSFA", width: 3, height: 4 },
+    //{ mode: "2d", colors: "SCpGRQ", width: 3, height: 4 },
     { mode: "3d" }];
 let levelIndex = 0;
 let currentLevel = levels[levelIndex];
 let unbind2dClickHandler = undefined;
-let getFaceState = undefined;
+let state3d = undefined;
 
 //=======================================================
 // Function to get a random value between min and max
@@ -141,10 +141,12 @@ const hintFunction = async (_event, limit = 7) => {
             showHintModal();
         }
     } else {
-        const colorState = binaryToUrlSafeBase64(encodeArrayToBinary(getFaceState()));
+        const colorState = binaryToUrlSafeBase64(encodeArrayToBinary(state3d.getFaceState()));
         console.log(colorState);
         const solution = isGameWinnable3d(colorState);
         console.log("3d Solution:", solution);
+        const nextMove = solution[0];
+        state3d.highlightFace(nextMove);
         //console.log("No hint for 3d");
     }
 }
@@ -219,7 +221,7 @@ const initGame = async (index) => {
         document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13 Try dragging`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
-        getFaceState = start3d(() => {
+        state3d = start3d(() => {
             // onWin function
             localStorage.setItem(LS_NAMESPACE + index, "true");
             win3d();
