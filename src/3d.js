@@ -41,7 +41,7 @@ export function start3d(onWin) {
 
   // State
   let faceState = INITIAL_FACE_COLORS;
-  let faceToHighlight = 2;
+  let faceToHighlight = -1;
   let parentGl = null;
 
   var texcoordBuffer = null;
