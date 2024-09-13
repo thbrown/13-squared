@@ -27,6 +27,9 @@ module.exports = {
         terserOptions: {
           output: {
             comments: false,
+          },
+          compress: {
+            drop_console: true
           }
         },
       }),

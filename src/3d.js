@@ -295,7 +295,7 @@ export function start3d(onWin) {
     function drawScene() {
       let elapsedTime = (Date.now() - startTime) / 1000.0;
 
-      resizeCanvasToDisplaySize(gl.canvas);
+      resizeCanvasToDisplaySize(gl.canvas, 3);
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       gl.enable(gl.CULL_FACE);
       gl.enable(gl.DEPTH_TEST);

@@ -3,8 +3,10 @@ import { start2d } from './2d.js';
 import { FireworkEffect } from './fireworks.js';
 import { encodeGridStateToBase64, isGameWinnable2d, isGameWinnable3d, binaryToUrlSafeBase64, encodeArrayToBinary } from './2d-utils';
 
-// Init start screen
-// TODO: select level
+
+// TODO: maybe a 2xsomething level
+// TODO: cube mobile
+// TODO: cube zoom
 
 const LS_NAMESPACE = "yams-2024-";
 
@@ -20,13 +22,13 @@ const fireworkEffect = new FireworkEffect(10, canvas);
 
 // Init levels
 const levels = [
-    { mode: "2d", colors: "QA", width: 1, height: 1 },
-    { mode: "2d", colors: "kA", width: 1, height: 3 },
-    { mode: "2d", colors: "GQ", width: 1, height: 4 },
-    { mode: "2d", colors: "SSFA", width: 3, height: 3 },
-    { mode: "2d", colors: "SSFA", width: 3, height: 4 },
-    { mode: "2d", colors: "SCpGRQ", width: 3, height: 4 },
-    { mode: "3d" }];
+    { mode: "2d", colors: "QA", width: 1, height: 1, subtitle: "Make it 13" },
+    { mode: "2d", colors: "kA", width: 1, height: 3, subtitle: "Make them all 13" },
+    { mode: "2d", colors: "GQ", width: 1, height: 4, subtitle: "Make them all 13" },
+    { mode: "2d", colors: "SSFA", width: 3, height: 3, subtitle: "Make them all 13" },
+    { mode: "2d", colors: "SSFA", width: 3, height: 4, subtitle: "Make them all 13" },
+    { mode: "2d", colors: "SCpGRQ", width: 3, height: 4, subtitle: "Make them all 13" },
+    { mode: "3d", subtitle: "Make them all 13, try dragging" }];
 let levelIndex = 0;
 let currentLevel = levels[levelIndex];
 let unbind2dClickHandler = undefined;
@@ -77,21 +79,51 @@ function explodeSquares() {
 //=======================================================
 
 // Init win dialog
+const playWinGameSound = () => {
+    const audioContext = new AudioContext();
+    const values = [1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22];
+    const freqs = [46, 47, 50, 51, 5, 21, 44, 45, 48, 49, 52, 53, 42, 43, 54, 55, 1, 3, 7, 17, 19, 23, 36, 37, 40, 41, 56, 57, 34, 35, 38, 39, 58, 59, 1, 7, 9, 11, 13, 17, 23, 25, 27, 29, 60, 61, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 52, 54, 56, 58, 60, 62, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 42, 44, 46, 48, 50, 63, 64, 65];
+
+    values.map((v, i) => {
+        if (v) {
+            const osc = audioContext.createOscillator();
+            const e = freqs[i] / 5;
+            osc.connect(audioContext.destination);
+            osc.frequency.value = 988 / 1.06 ** v;
+            osc.type = 'triangle';
+            osc.start(e);
+            osc.stop(e + 0.2);
+        }
+    });
+}
+const playWinLevelSound = () => {
+    const audioContext = new AudioContext();
+    const values = [3, 6, 6, 6, 10, 10, 10, 15, 15, 18, 18, 18, 18, 22, 22, 22];
+    const freqs = [5, 1, 3, 7, 1, 7, 9, 5, 6, 3, 4, 7, 8, 1, 2, 9];
+
+    values.map((v, i) => {
+        if (v) {
+            const osc = audioContext.createOscillator();
+            const e = freqs[i] / 5;
+            osc.connect(audioContext.destination);
+            osc.frequency.value = 988 / 1.06 ** v;
+            osc.type = 'triangle';
+            osc.start(e);
+            osc.stop(e + 0.2);
+        }
+    });
+}
 const winMessage = document.getElementById('win-message');
 const showWinModal = (final, levelIndex) => {
     const gameContainer = document.getElementById('game-container-2d');
     gameContainer.style.boxShadow = 'unset';
     const title = document.getElementById('title');
     title.style.filter = 'invert(1)';
-    if (final) {
-        winMessage.textContent = `Congratulations! You beat the game!`;
-    } else {
-        winMessage.textContent = `Congratulations! You beat level ${levelIndex + 1} of ${levels.length}!`;
-    }
+    winMessage.textContent = `Congratulations! You beat level ${levelIndex + 1} of ${levels.length}!`;
     document.getElementById('next-level').style.display = 'unset';
     document.getElementById('win-modal').style.display = 'block';
     document.getElementById('controls').style.visibility = 'hidden';
-
+    document.getElementById('subtitle').style.visibility = "hidden";
 };
 const closeModal = () => {
     document.getElementById('win-modal').style.display = 'none';
@@ -119,10 +151,10 @@ document.getElementById('next-level').addEventListener('click', nextLevel);
 
 // Init Controls
 const hintFunction = async (_event, limit = 7) => {
-    if (levelIndex <= 4) {
+    if (levelIndex <= 3) {
         limit = 100; // No need to limit hints for the first few levels, they are small
     }
-    console.log("Hint with limit", limit);
+    console.log("Hint with limit", limit, levelIndex);
     if (currentLevel.mode === "2d") {
         const colorState = encodeGridStateToBase64();
         const solution = isGameWinnable2d(colorState, currentLevel.height, currentLevel.width, limit);
@@ -153,13 +185,23 @@ const hintFunction = async (_event, limit = 7) => {
 
 document.getElementById('hint').addEventListener('click', hintFunction);
 
+let canClickSkip = true;  // Flag to control throttling
 document.getElementById('skip').addEventListener('click', function () {
+    if (!canClickSkip) return;  // If the flag is false, ignore the click
+
     if (levelIndex === levels.length - 1) {
         // For the last level we'll just show the win animation
         win3d();
     } else {
         nextLevel();
     }
+
+    canClickSkip = false; 
+
+    // Re-enable the click after 1 second
+    setTimeout(function () {
+        canClickSkip = true;
+    }, 500);
 });
 
 const win3d = () => {
@@ -168,12 +210,15 @@ const win3d = () => {
     const rect = document.getElementById("game-canvas-3d").getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 2000);
+    setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 4000);
     danceCube();
     const titleElement = document.getElementById('title');
     titleElement.textContent = `You win!`;
     titleElement.style.color = 'white';
+    document.getElementById('subtitle').style.visibility = 'hidden';
     document.getElementById('controls').style.visibility = 'hidden';
+    document.getElementById('controls-end').style.visibility = 'unset';
+    playWinGameSound();
 };
 
 // Init main game function
@@ -202,11 +247,9 @@ const initGame = async (index) => {
     // Init the game
     currentLevel = levels[index];
     console.log("Init level", index, currentLevel);
-    if (index === 0) {
-        document.getElementById('title').textContent = `Level ${index + 1} - Make it 13`;
-    } else {
-        document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13`;
-    }
+    document.getElementById('title').textContent = `Level ${index + 1}`;
+    document.getElementById('subtitle').textContent = currentLevel.subtitle;
+    document.getElementById('subtitle').style.visibility = "unset";
     if (currentLevel.mode === "2d") {
         document.getElementById('game-container-wrapper-2d').style.visibility = 'unset';
         document.getElementById('game-canvas-3d').style.visibility = 'hidden';
@@ -214,13 +257,15 @@ const initGame = async (index) => {
             // onWin function
             localStorage.setItem(LS_NAMESPACE + index, "true");
             fireworkEffect.startFireworks();
+            playWinLevelSound();
             disperseSquares();
             showWinModal(false, levelIndex);
         })
     } else {
-        document.getElementById('title').textContent = `Level ${index + 1} - Make it all 13 Try dragging`;
+        document.getElementById('title').textContent = `Level ${index + 1}`;
         document.getElementById('game-container-wrapper-2d').style.visibility = 'hidden';
         document.getElementById('game-canvas-3d').style.visibility = 'unset';
+        //document.getElementById('skip').textContent = 'Play Win Sequence';
         state3d = start3d(() => {
             // onWin function
             localStorage.setItem(LS_NAMESPACE + index, "true");
@@ -246,6 +291,10 @@ document.getElementById('okay').addEventListener('click', function () {
 document.getElementById('wait').addEventListener('click', function () {
     closeModal();
     hintFunction(null, null);
+});
+
+document.getElementById('controls-end').addEventListener('click', function () {
+    location.reload();
 });
 
 const showHintModal = () => {
