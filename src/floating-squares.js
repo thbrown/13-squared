@@ -55,16 +55,9 @@ class FloatingSquare {
         
         // Draw the number 13 centered
         ctx.fillText(text, textX, textY);
-        
         ctx.restore();
     }
 }
-
-/*
-        const textAttr = context.measureText(text);
-        const textWidth = textAttr.width;
-        const textHeight = textAttr.actualBoundingBoxAscent + textAttr.actualBoundingBoxDescent;
-        */
 
 export class FloatingSquaresEffect {
     constructor(rate, canvas) {
