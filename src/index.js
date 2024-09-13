@@ -1,6 +1,7 @@
 import { start3d, danceCube } from './3d.js';
 import { start2d } from './2d.js';
 import { FireworkEffect } from './fireworks.js';
+import { FloatingSquaresEffect } from './floating-squares.js';
 import { encodeGridStateToBase64, isGameWinnable2d, isGameWinnable3d, binaryToUrlSafeBase64, encodeArrayToBinary } from './2d-utils';
 
 
@@ -19,6 +20,7 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 const fireworkEffect = new FireworkEffect(10, canvas);
+const floatingSquares = new FloatingSquaresEffect(50, canvas);
 
 // Init levels
 const levels = [
@@ -234,6 +236,7 @@ const initGame = async (index) => {
     const controls = document.getElementById('controls');
     controls.style.visibility = '';
 
+
     // Check if this level has been beaten before
     var beaten = localStorage.getItem(LS_NAMESPACE + index);
     if (beaten === "true") {
@@ -260,6 +263,7 @@ const initGame = async (index) => {
             playWinLevelSound();
             disperseSquares();
             showWinModal(false, levelIndex);
+            
         })
     } else {
         document.getElementById('title').textContent = `Level ${index + 1}`;
@@ -277,6 +281,7 @@ const initGame = async (index) => {
 document.getElementById('close-intro').addEventListener('click', function () {
     document.getElementById('game-container').style.visibility = 'unset';
     document.getElementById('intro-modal').style.display = 'none';
+    floatingSquares.stop();
     console.log("Starting game");
 });
 
@@ -303,3 +308,4 @@ const showHintModal = () => {
 
 // Start game
 initGame(levelIndex);
+floatingSquares.start();
