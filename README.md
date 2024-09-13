@@ -1,6 +1,6 @@
 ## js13k 2024
 
-TODO
+I made this game for js13k 2024.
 
 ## Prerequisites
 
