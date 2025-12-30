@@ -2,6 +2,8 @@
 
 I made this game for js13k 2024.
 
+Live: https://thbrown.github.io/13-squared/
+
 ## Prerequisites
 
 1. install node
@@ -12,7 +14,7 @@ I made this game for js13k 2024.
 `npm install`
 `npm run build-dev`
 
-Then open `./dist/index.html` in your browser
+Then open `./docs/index.html` in your browser
 
 ## Other Scripts
 

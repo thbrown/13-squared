@@ -4,6 +4,8 @@ background-color: white;
 ">
 <head>
     <title>Make it 13</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#111111">
 </head>
 <body>
     <!-- Game elements -->
@@ -403,6 +405,15 @@ background-color: white;
       varying float v_picking_color;
       void main() {
          gl_FragColor = vec4(v_picking_color, 0, 0, 1.0);
+      }
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(registration => console.log('SW registered:', registration))
+            .catch(err => console.log('SW registration failed:', err));
+        });
       }
     </script>
 </body>

@@ -212,7 +212,7 @@ const win3d = () => {
     const rect = document.getElementById("game-canvas-3d").getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 4000);
+    setTimeout(() => fireworkEffect.createFirework(centerX, centerY, true), 3000);
     danceCube();
     const titleElement = document.getElementById('title');
     titleElement.textContent = `You win!`;
